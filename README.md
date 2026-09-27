@@ -1,8 +1,10 @@
 # Terminal Keeper
 
-For when your agents each have a terminal and you are tired of opening them again.
+Persistent terminal tabs for VS Code and Cursor, backed by tmux.
 
-You leave a tab in the scheduler, a split on the client repo, another one wherever the last agent was working. Close Cursor, or lose the WSL connection, and that setup is gone. Terminal Keeper keeps the tabs and the folders, and lets you bookmark a whole set the way you would bookmark tabs in Chrome.
+You leave a tab in the scheduler, a split on the client repo, another one wherever the last agent was working. Reload the window, close the editor, or lose the SSH/WSL connection, and that setup is gone. Terminal Keeper keeps the tabs and their folders, and lets you save a whole set the way you would bookmark tabs in a browser.
+
+Works in VS Code, Cursor, and other VS Code-based editors, locally or over Remote SSH / WSL.
 
 ![Saved terminal layouts](media/layouts-pane.png)
 
@@ -30,14 +32,22 @@ The panel **+** button is still a normal shell. It is not saved.
 
 ## Install
 
-You need `tmux`. Then, from this folder:
+You need `tmux` on the machine where the terminals run (the remote host when using Remote SSH or WSL).
+
+From the marketplace: search for **Terminal Keeper** in the Extensions view.
+
+From source:
 
 ```bash
 bash install.sh
 ```
 
+The script picks the extensions folder of whichever editor it finds (VS Code, VS Code Server, Cursor).
+
 Reload the window. The first time, use **Terminal Keeper: New Persistent Terminal** so a tab is one Terminal Keeper knows about.
 
-Layouts are stored in `<workspace>/.cursor/terminal-bookmarks.json`. The live tabs are in `<workspace>/.cursor/terminal-layout.json`.
+## How it works
 
-If tmux is still running after Cursor dies, the next open reattaches those same panes. If WSL itself shuts down, the folders come back and the processes that were running do not.
+Each persistent tab is a tmux session. Layouts are stored in `<workspace>/.cursor/terminal-bookmarks.json` and the live tabs in `<workspace>/.cursor/terminal-layout.json`. The same directory is used in every editor, so a layout saved in VS Code opens in Cursor and vice versa.
+
+If tmux is still running after the editor dies, the next open reattaches those same panes. If the host itself shuts down, the folders come back and the processes that were running do not.
