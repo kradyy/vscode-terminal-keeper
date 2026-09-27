@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# Default shell wrapper: every IDE terminal becomes a unique tmux session.
+set -euo pipefail
+
+CWD="${1:-${PWD:-$HOME}}"
+cd "$CWD" 2>/dev/null || cd "$HOME" || true
+CWD="$(pwd)"
+
+STATE_DIR="${CWD}/.cursor"
+# Prefer workspace .cursor when launched from a project folder; else home.
+if [[ ! -d "$STATE_DIR" && -n "${TK_WORKSPACE:-}" && -d "${TK_WORKSPACE}/.cursor" ]]; then
+  STATE_DIR="${TK_WORKSPACE}/.cursor"
+elif [[ ! -d "$STATE_DIR" ]]; then
+  # Walk up for a .git / .cursor workspace root
+  dig="$CWD"
+  while [[ "$dig" != "/" ]]; do
+    if [[ -d "$dig/.cursor" || -d "$dig/.git" ]]; then
+      STATE_DIR="$dig/.cursor"
+      break
+    fi
+    dig="$(dirname "$dig")"
+  done
+fi
+mkdir -p "$STATE_DIR"
+STATE="$STATE_DIR/terminal-keeper-state.json"
+
+BASE="$(basename "$CWD" | tr -c 'A-Za-z0-9_-' '-' | sed 's/^-*//;s/-*$//')"
+BASE="${BASE:-ws}"
+SESSION="tk-${BASE}-$(date +%s | tail -c 5)-${RANDOM}"
+
+python3 - "$STATE" "$SESSION" "$CWD" "$STATE_DIR" <<'PY'
+import json, sys, os, datetime
+path, session, cwd, state_dir = sys.argv[1:5]
+workspace = os.path.dirname(state_dir)
+try:
+    data = json.load(open(path))
+except Exception:
+    data = {"terminals": []}
+terms = [t for t in (data.get("terminals") or []) if t.get("session") != session]
+terms.append({"name": session, "session": session, "cwd": cwd})
+data = {
+    "workspace": workspace,
+    "updatedAt": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+    "terminals": terms,
+}
+json.dump(data, open(path, "w"), indent=2)
+print(session)
+PY
+
+exec tmux new-session -A -s "$SESSION" -c "$CWD"

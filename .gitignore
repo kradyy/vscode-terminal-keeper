@@ -1,0 +1,4 @@
+.omc
+node_modules
+*.vsix
+todo.md

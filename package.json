@@ -1,0 +1,155 @@
+{
+  "name": "terminal-keeper",
+  "displayName": "Terminal Keeper",
+  "description": "Persist Cursor terminals via tmux. Opt-in persistent tabs that survive reloads.",
+  "version": "0.6.0",
+  "publisher": "chris",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onView:terminalKeeper.bookmarks",
+    "onView:terminalKeeper.options",
+    "onCommand:terminalKeeper.openOptions"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "terminalKeeper.openPersistent",
+        "title": "Terminal Keeper: New Persistent Terminal"
+      },
+      {
+        "command": "terminalKeeper.restore",
+        "title": "Terminal Keeper: Restore Saved Terminals"
+      },
+      {
+        "command": "terminalKeeper.save",
+        "title": "Terminal Keeper: Save Terminal Tabs Now"
+      },
+      {
+        "command": "terminalKeeper.attachExisting",
+        "title": "Terminal Keeper: Attach Existing tmux Session"
+      },
+      {
+        "command": "terminalKeeper.split",
+        "title": "Terminal Keeper: Split Persistent Terminal"
+      },
+      {
+        "command": "terminalKeeper.saveAllTabs",
+        "title": "Save all tabs",
+        "icon": "$(save)"
+      },
+      {
+        "command": "terminalKeeper.loadBookmark",
+        "title": "Load layout",
+        "icon": "$(folder-opened)"
+      },
+      {
+        "command": "terminalKeeper.deleteBookmark",
+        "title": "Delete layout",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "terminalKeeper.openOptions",
+        "title": "Terminal Keeper: Options",
+        "icon": "$(gear)"
+      }
+    ],
+    "viewsContainers": {
+      "panel": [
+        {
+          "id": "terminalKeeperPanel",
+          "title": "Layouts",
+          "icon": "media/layouts.svg"
+        }
+      ]
+    },
+    "views": {
+      "terminalKeeperPanel": [
+        {
+          "id": "terminalKeeper.bookmarks",
+          "name": "Saved layouts"
+        },
+        {
+          "id": "terminalKeeper.options",
+          "name": "Options",
+          "type": "webview"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "terminalKeeper.bookmarks",
+        "contents": "No saved layouts yet.\n[Save all tabs](command:terminalKeeper.saveAllTabs)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "terminalKeeper.saveAllTabs",
+          "when": "view == terminalKeeper.bookmarks",
+          "group": "navigation"
+        },
+        {
+          "command": "terminalKeeper.openOptions",
+          "when": "view == terminalKeeper.bookmarks || view == terminalKeeper.options",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "terminalKeeper.loadBookmark",
+          "when": "view == terminalKeeper.bookmarks && viewItem == bookmark",
+          "group": "inline"
+        },
+        {
+          "command": "terminalKeeper.deleteBookmark",
+          "when": "view == terminalKeeper.bookmarks && viewItem == bookmark",
+          "group": "inline"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "terminalKeeper.split",
+        "key": "ctrl+shift+5",
+        "when": "terminalFocus"
+      }
+    ],
+    "configuration": {
+      "title": "Terminal Keeper",
+      "properties": {
+        "terminalKeeper.autoRestore": {
+          "type": "boolean",
+          "default": true,
+          "description": "Restore saved terminals on reload (default terminal save/restore)."
+        },
+        "terminalKeeper.autoSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "Auto-save open Terminal Keeper tabs to .cursor/terminal-layout.json. Off by default; use Save or named layouts instead."
+        },
+        "terminalKeeper.sessionPrefix": {
+          "type": "string",
+          "default": "tk",
+          "description": "Prefix for tmux session names."
+        },
+        "terminalKeeper.restoreDelayMs": {
+          "type": "number",
+          "default": 1200,
+          "description": "Delay before restore on startup (ms)."
+        },
+        "terminalKeeper.maxRestore": {
+          "type": "number",
+          "default": 12,
+          "description": "Max panes to restore on startup. Panes after the first in a group are splits."
+        }
+      }
+    }
+  }
+}
