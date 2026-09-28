@@ -1,4 +1,4 @@
-# Terminal Keeper
+# Terminal Keeper for tmux
 
 Persistent terminal tabs for VS Code and Cursor, backed by tmux. For when your agents each have a terminal and you are tired of opening them again.
 
@@ -34,7 +34,7 @@ The panel **+** button is a normal shell. Save and auto-save record that tab and
 
 You need `tmux` on the machine where the terminals run (the remote host when using Remote SSH or WSL).
 
-From the marketplace: search for **Terminal Keeper** in the Extensions view.
+From the marketplace: search for **Terminal Keeper for tmux** in the Extensions view.
 
 From source:
 
