@@ -41,7 +41,7 @@ function optionsHtml(nonce, values) {
   <meta charset="UTF-8" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'nonce-${nonce}'; script-src 'nonce-${nonce}';" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Terminal Keeper Options</title>
+  <title>Terminal Layouts Options</title>
   <style nonce="${nonce}">
     :root { color-scheme: light dark; --gap: 14px; --radius: 8px; }
     body {
@@ -109,14 +109,14 @@ function optionsHtml(nonce, values) {
   </style>
 </head>
 <body>
-  <h1>Terminal Keeper</h1>
+  <h1>Terminal Layouts</h1>
   <p class="sub">Toggles write straight into your Cursor <code>settings.json</code>.</p>
 
   <div class="card">
     <div class="row">
       <div>
         <p class="label">Restore saved terminals on reload</p>
-        <p class="hint">Default terminal save/restore. Reopens your saved tmux-backed tabs after Reload Window or remote restart.</p>
+        <p class="hint">Default terminal save/restore. Reopens your saved tabs after Reload Window or remote restart. Uses tmux when it is installed, so running processes survive too.</p>
       </div>
       <label class="switch">
         <input type="checkbox" id="autoRestore" ${autoRestore ? "checked" : ""} />
@@ -248,7 +248,7 @@ function registerOptions(ctx, hooks = {}) {
     }
     panel = vscode.window.createWebviewPanel(
       OPTIONS_PANEL_TYPE,
-      "Terminal Keeper Options",
+      "Terminal Layouts Options",
       vscode.ViewColumn.Active,
       { enableScripts: true, retainContextWhenHidden: true }
     );

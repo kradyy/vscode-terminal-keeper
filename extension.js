@@ -280,7 +280,7 @@ async function saveNow(showMessage) {
   const groups = await currentGroups();
   if (groups.length === 0) {
     if (showMessage) {
-      vscode.window.showInformationMessage("Terminal Keeper: no tabs to save.");
+      vscode.window.showInformationMessage("Terminal Layouts: no tabs to save.");
     }
     return;
   }
@@ -294,7 +294,7 @@ async function saveNow(showMessage) {
   if (showMessage) {
     const panes = groups.reduce((n, g) => n + g.panes.length, 0);
     vscode.window.showInformationMessage(
-      `Terminal Keeper: saved ${panes} pane(s) in ${groups.length} group(s)`
+      `Terminal Layouts: saved ${panes} pane(s) in ${groups.length} group(s)`
     );
   }
 }
@@ -307,24 +307,21 @@ function defaultCwd() {
  * @param {{ name?: string, session?: string, cwd?: string, groupId?: string, parent?: vscode.Terminal, show?: boolean }} opts
  */
 function openPersistentTerminal(opts) {
-  if (!tmuxAvailable()) {
-    vscode.window.showErrorMessage("Terminal Keeper needs tmux.");
-    return null;
-  }
-
+  const useTmux = tmuxAvailable();
   const cwd = opts.cwd || defaultCwd();
   const name = opts.name || basename(cwd) || "term";
   const session = opts.session || makeSessionName(name);
   const groupId = opts.groupId || `g-${Date.now().toString(36)}`;
 
-  ensureSession(session, cwd);
+  if (useTmux) ensureSession(session, cwd);
 
+  // Without tmux the tab is a plain shell in the saved folder; the session
+  // name is only an id for the layout file.
   /** @type {vscode.TerminalOptions} */
   const options = {
     name,
     cwd,
-    shellPath: "tmux",
-    shellArgs: ["attach-session", "-t", session],
+    ...(useTmux ? { shellPath: "tmux", shellArgs: ["attach-session", "-t", session] } : {}),
     env: {
       [META_ENV]: "1",
       TERMINAL_KEEPER_SESSION: session,
@@ -342,7 +339,6 @@ function openPersistentTerminal(opts) {
 }
 
 async function restoreSaved(silent) {
-  if (!tmuxAvailable()) return;
   if (restoring) return;
   restoring = true;
 
@@ -360,7 +356,7 @@ async function restoreSaved(silent) {
     if (actions.length === 0) {
       if (!silent) {
         vscode.window.showInformationMessage(
-          "Terminal Keeper: nothing saved. Use Terminal Keeper: New Persistent Terminal."
+          "Terminal Layouts: nothing saved. Use Terminal Layouts: New Persistent Terminal."
         );
       }
       return;
@@ -410,7 +406,7 @@ async function restoreSaved(silent) {
     if (opened > 0 && !silent) {
       const splits = actions.filter((a) => a.split).length;
       vscode.window.showInformationMessage(
-        `Terminal Keeper: restored ${opened} terminal(s), ${splits} split(s).`
+        `Terminal Layouts: restored ${opened} terminal(s), ${splits} split(s).`
       );
     }
     return opened;
@@ -529,7 +525,7 @@ function activate(ctx) {
       const groups = await currentGroups();
       const panes = groups.reduce((n, g) => n + (g.panes || []).length, 0);
       if (panes === 0) {
-        vscode.window.showInformationMessage("Terminal Keeper: no tabs to save.");
+        vscode.window.showInformationMessage("Terminal Layouts: no tabs to save.");
         return;
       }
       const name = await vscode.window.showInputBox({
@@ -588,7 +584,7 @@ function activate(ctx) {
   if (cfg().get("autoRestore")) {
     const delay = Number(cfg().get("restoreDelayMs")) || 1200;
     setTimeout(() => {
-      restoreSaved(true).catch((err) => console.error("Terminal Keeper restore failed", err));
+      restoreSaved(true).catch((err) => console.error("Terminal Layouts restore failed", err));
     }, delay);
   }
 }

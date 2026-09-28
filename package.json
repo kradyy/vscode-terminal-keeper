@@ -1,7 +1,7 @@
 {
-  "name": "tmux-terminal-keeper",
-  "displayName": "Terminal Keeper for tmux",
-  "description": "Persistent terminal tabs for VS Code and Cursor, backed by tmux. Save, bookmark and restore terminal layouts that survive reloads.",
+  "name": "terminal-layouts",
+  "displayName": "Terminal Layouts",
+  "description": "Save, bookmark and restore terminal tabs, folders and splits in VS Code and Cursor. Uses tmux when installed so running processes survive reloads.",
   "version": "0.6.0",
   "publisher": "kradyy",
   "license": "MIT",
@@ -40,23 +40,23 @@
     "commands": [
       {
         "command": "terminalKeeper.openPersistent",
-        "title": "Terminal Keeper: New Persistent Terminal"
+        "title": "Terminal Layouts: New Persistent Terminal"
       },
       {
         "command": "terminalKeeper.restore",
-        "title": "Terminal Keeper: Restore Saved Terminals"
+        "title": "Terminal Layouts: Restore Saved Terminals"
       },
       {
         "command": "terminalKeeper.save",
-        "title": "Terminal Keeper: Save Terminal Tabs Now"
+        "title": "Terminal Layouts: Save Terminal Tabs Now"
       },
       {
         "command": "terminalKeeper.attachExisting",
-        "title": "Terminal Keeper: Attach Existing tmux Session"
+        "title": "Terminal Layouts: Attach Existing tmux Session"
       },
       {
         "command": "terminalKeeper.split",
-        "title": "Terminal Keeper: Split Persistent Terminal"
+        "title": "Terminal Layouts: Split Persistent Terminal"
       },
       {
         "command": "terminalKeeper.saveAllTabs",
@@ -75,7 +75,7 @@
       },
       {
         "command": "terminalKeeper.openOptions",
-        "title": "Terminal Keeper: Options",
+        "title": "Terminal Layouts: Options",
         "icon": "$(gear)"
       }
     ],
@@ -141,7 +141,7 @@
       }
     ],
     "configuration": {
-      "title": "Terminal Keeper",
+      "title": "Terminal Layouts",
       "properties": {
         "terminalKeeper.autoRestore": {
           "type": "boolean",
@@ -151,7 +151,7 @@
         "terminalKeeper.autoSave": {
           "type": "boolean",
           "default": false,
-          "description": "Auto-save open Terminal Keeper tabs to .cursor/terminal-layout.json. Off by default; use Save or named layouts instead."
+          "description": "Auto-save open Terminal Layouts tabs to .cursor/terminal-layout.json. Off by default; use Save or named layouts instead."
         },
         "terminalKeeper.sessionPrefix": {
           "type": "string",
