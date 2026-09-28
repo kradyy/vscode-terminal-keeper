@@ -1,0 +1,8 @@
+.git/**
+.gitignore
+.omc/**
+.vscodeignore
+test/**
+install.sh
+todo.md
+*.vsix

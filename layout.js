@@ -72,6 +72,68 @@ function restoreActions(groups, maxPanes) {
   return actions;
 }
 
+/** Tab title wins. A generic shell name falls back to the folder. */
+function displayName(title, cwd) {
+  const t = String(title || "").trim();
+  const folder = basename(cwd);
+  if (!t || /^(bash|sh|zsh|fish|tmux|powershell|pwsh)$/i.test(t)) return folder || t || "term";
+  return t;
+}
+
+/**
+ * A live folder that is not the workspace root wins.
+ * Otherwise the folder the tab was opened in, then a folder matching the tab title.
+ */
+function chooseCwd(live, created, titled, workspace) {
+  const root = workspace || "";
+  if (live && live !== root) return live;
+  if (created && created !== root) return created;
+  if (titled && titled !== root) return titled;
+  return live || created || titled || "";
+}
+
+/** A split shares its parent's group. Every other tab is its own group. */
+function ownTabGroup(session, parentGroupId) {
+  return parentGroupId || session;
+}
+
+/** `tmux attach-session -t <name>` from a process command line or shell args. */
+function sessionFromCommand(command) {
+  const text = String(command || "")
+    .replace(/\0/g, " ")
+    .trim();
+  const match = text.match(/(?:^|[\s/])tmux\s+attach(?:-session)?(?:\s+-\S+)*\s+-t\s+(\S+)/);
+  return match ? match[1] : "";
+}
+
+/**
+ * Tabs open right now, in order. The same session twice (Cursor revived it,
+ * then Terminal Keeper attached again) is stored once. groupId ties splits
+ * together; without one, the pane is its own tab.
+ * This does not look at the previous file. Closed sessions stay closed.
+ */
+function groupOpenPanes(panes) {
+  const groups = [];
+  const byId = new Map();
+  const seen = new Set();
+  for (const pane of panes || []) {
+    if (!pane || !pane.session || seen.has(pane.session)) continue;
+    seen.add(pane.session);
+    const id = pane.groupId || pane.session;
+    if (!byId.has(id)) {
+      const group = { id, panes: [] };
+      byId.set(id, group);
+      groups.push(group);
+    }
+    byId.get(id).panes.push({
+      name: pane.name || basename(pane.cwd) || pane.session,
+      session: pane.session,
+      cwd: pane.cwd || "",
+    });
+  }
+  return groups;
+}
+
 /**
  * Attached tmux sessions that are not already in the layout become their own tabs.
  * Existing groups stay as they are, including splits.
@@ -109,5 +171,10 @@ module.exports = {
   migrate,
   withLiveCwds,
   restoreActions,
+  sessionFromCommand,
+  displayName,
+  chooseCwd,
+  ownTabGroup,
+  groupOpenPanes,
   mergeAttachedSessions,
 };

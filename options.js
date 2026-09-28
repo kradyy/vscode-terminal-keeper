@@ -110,7 +110,7 @@ function optionsHtml(nonce, values) {
 </head>
 <body>
   <h1>Terminal Keeper</h1>
-  <p class="sub">Toggles write straight into your editor <code>settings.json</code>.</p>
+  <p class="sub">Toggles write straight into your Cursor <code>settings.json</code>.</p>
 
   <div class="card">
     <div class="row">

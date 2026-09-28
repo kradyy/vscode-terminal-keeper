@@ -3,7 +3,26 @@
   "displayName": "Terminal Keeper",
   "description": "Persistent terminal tabs for VS Code and Cursor, backed by tmux. Save, bookmark and restore terminal layouts that survive reloads.",
   "version": "0.6.0",
-  "publisher": "chris",
+  "publisher": "kradyy",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kradyy/vscode-terminal-keeper.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kradyy/vscode-terminal-keeper/issues"
+  },
+  "homepage": "https://github.com/kradyy/vscode-terminal-keeper#readme",
+  "keywords": [
+    "terminal",
+    "tmux",
+    "persistent",
+    "layout",
+    "cursor",
+    "remote",
+    "wsl",
+    "ssh"
+  ],
   "engines": {
     "vscode": "^1.85.0"
   },

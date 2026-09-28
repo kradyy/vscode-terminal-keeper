@@ -3,7 +3,7 @@ const { execFileSync } = require("child_process");
 const path = require("path");
 const fs = require("fs");
 const os = require("os");
-const { basename, migrate, withLiveCwds, restoreActions, mergeAttachedSessions } = require("./layout");
+const { basename, migrate, withLiveCwds, restoreActions, sessionFromCommand, displayName, chooseCwd, ownTabGroup, groupOpenPanes } = require("./layout");
 const { summarize, addBookmark, removeBookmark, findBookmark } = require("./bookmarks");
 const { registerOptions } = require("./options");
 
@@ -143,25 +143,6 @@ function getMeta(term) {
   return null;
 }
 
-function collectGroups() {
-  /** @type {Map<string, {id: string, panes: Array<{name: string, session: string, cwd: string}>}>} */
-  const groups = new Map();
-  const seen = new Set();
-  for (const term of vscode.window.terminals) {
-    const meta = getMeta(term);
-    if (!meta?.session || seen.has(meta.session)) continue;
-    seen.add(meta.session);
-    const id = meta.groupId || meta.session;
-    if (!groups.has(id)) groups.set(id, { id, panes: [] });
-    groups.get(id).panes.push({
-      name: meta.name || term.name || meta.session,
-      session: meta.session,
-      cwd: meta.cwd || "",
-    });
-  }
-  return [...groups.values()];
-}
-
 function refreshCwds(groups) {
   /** @type {Record<string, string>} */
   const live = {};
@@ -176,60 +157,133 @@ function refreshCwds(groups) {
 }
 
 function scheduleSave() {
-  if (!cfg().get("autoSave")) return;
+  if (restoring || !cfg().get("autoSave")) return;
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => saveNow(false), 500);
 }
 
-function listAttachedSessions() {
+function readCmdline(pid) {
   try {
-    const out = execFileSync(
-      "tmux",
-      ["list-sessions", "-F", "#{session_attached}\t#{session_name}"],
-      { encoding: "utf8" }
-    );
-    const attached = [];
-    for (const line of out.split("\n")) {
-      const [count, name] = line.split("\t");
-      if (!name || Number(count) < 1) continue;
-      const cwd = liveCwd(name);
-      if (!cwd) continue;
-      attached.push({ session: name, cwd });
-    }
-    return attached;
+    return fs.readFileSync(`/proc/${pid}/cmdline`).toString("utf8");
   } catch {
-    return [];
+    return "";
   }
 }
 
-function currentGroups() {
-  const open = refreshCwds(collectGroups());
-  const prev = readState();
-  let groups = open;
+function readProcCwd(pid) {
+  if (!pid) return "";
+  try {
+    return fs.realpathSync(`/proc/${pid}/cwd`);
+  } catch {
+    return "";
+  }
+}
 
-  if (open.length === 0) {
-    groups = (prev.groups || [])
-      .map((g) => ({
-        ...g,
-        panes: (g.panes || []).filter((p) => p.session && sessionExists(p.session)),
-      }))
-      .filter((g) => g.panes.length > 0);
-  } else {
-    const byId = new Map();
-    for (const g of prev.groups || []) {
-      const panes = (g.panes || []).filter((p) => p.session && sessionExists(p.session));
-      if (panes.length) byId.set(g.id, { ...g, panes });
+function cwdFromOptions(term) {
+  const cwd = term.creationOptions && term.creationOptions.cwd;
+  if (!cwd) return "";
+  if (typeof cwd === "string") return cwd;
+  return cwd.fsPath || "";
+}
+
+function stableSessionName(cwd) {
+  const prefix = cfg().get("sessionPrefix") || "tk";
+  const ws =
+    path
+      .basename(workspaceKey())
+      .replace(/[^a-zA-Z0-9_-]+/g, "-")
+      .slice(0, 24) || "ws";
+  return `${prefix}-${ws}-${sanitizeSessionName(basename(cwd))}`;
+}
+
+function uniqueSession(base, used) {
+  if (!used.has(base)) return base;
+  let n = 2;
+  while (used.has(`${base}-${n}`)) n += 1;
+  return `${base}-${n}`;
+}
+
+function cwdFromTitle(title) {
+  const root = defaultCwd();
+  const name = String(title || "").trim();
+  if (!name || !root || name === path.basename(root)) return "";
+  const candidate = path.join(root, name);
+  try {
+    if (fs.statSync(candidate).isDirectory()) return candidate;
+  } catch {
+    return "";
+  }
+  return "";
+}
+
+/**
+ * One open editor terminal. Session comes from our metadata, or from
+ * `tmux attach-session -t ...` on the process. A normal shell is the folder
+ * it is actually in.
+ */
+async function inspectTerminal(term) {
+  const meta = getMeta(term);
+  let pid;
+  try {
+    pid = await term.processId;
+  } catch {
+    pid = undefined;
+  }
+  const command = pid ? readCmdline(pid) : "";
+  const opts = term.creationOptions || {};
+  const fromArgs = sessionFromCommand([opts.shellPath || "", ...(opts.shellArgs || [])].join(" "));
+  const session = (meta && meta.session) || sessionFromCommand(command) || fromArgs;
+  const live = session && sessionExists(session) ? liveCwd(session) : readProcCwd(pid);
+  const cwd = chooseCwd(live, (meta && meta.cwd) || cwdFromOptions(term), cwdFromTitle(term.name), defaultCwd());
+  if (!session && !cwd) return null;
+  return {
+    session: session || "",
+    cwd,
+    name: displayName(term.name, cwd),
+  };
+}
+
+/**
+ * The tabs open in this window. Does not merge the previous file, and does
+ * not pull in tmux sessions that no longer have a tab.
+ */
+async function currentGroups() {
+  const terms = vscode.window.terminals;
+  if (terms.length === 0) return [];
+
+  const panes = [];
+  const used = new Set();
+  /** @type {Map<vscode.Terminal, string>} */
+  const groupByTerm = new Map();
+
+  for (const term of terms) {
+    const info = await inspectTerminal(term);
+    if (!info) continue;
+    if (info.session && used.has(info.session)) continue;
+
+    if (!info.session) {
+      info.session = uniqueSession(stableSessionName(info.cwd), used);
     }
-    for (const g of open) byId.set(g.id, g);
-    groups = [...byId.values()];
+    used.add(info.session);
+
+    const parent = term.creationOptions && term.creationOptions.location && term.creationOptions.location.parentTerminal;
+    const groupId = ownTabGroup(info.session, (parent && groupByTerm.get(parent)) || "");
+    groupByTerm.set(term, groupId);
+    panes.push({ ...info, groupId });
   }
 
-  return refreshCwds(mergeAttachedSessions(groups, listAttachedSessions()));
+  return groupOpenPanes(panes);
 }
 
-function saveNow(showMessage) {
-  const groups = currentGroups();
-  if (groups.length === 0 && !showMessage) return;
+async function saveNow(showMessage) {
+  if (restoring && !showMessage) return;
+  const groups = await currentGroups();
+  if (groups.length === 0) {
+    if (showMessage) {
+      vscode.window.showInformationMessage("Terminal Keeper: no tabs to save.");
+    }
+    return;
+  }
 
   writeState({
     workspace: workspaceKey(),
@@ -313,9 +367,15 @@ async function restoreSaved(silent) {
     }
 
     const already = new Set();
+    const openCwds = new Set();
+    /** @type {Map<string, vscode.Terminal>} */
+    const termBySession = new Map();
     for (const term of vscode.window.terminals) {
-      const m = getMeta(term);
-      if (m?.session) already.add(m.session);
+      const info = await inspectTerminal(term);
+      if (info?.cwd) openCwds.add(info.cwd);
+      if (!info?.session || already.has(info.session)) continue;
+      already.add(info.session);
+      termBySession.set(info.session, term);
     }
 
     /** @type {Map<string, vscode.Terminal>} */
@@ -324,10 +384,13 @@ async function restoreSaved(silent) {
 
     for (const item of actions) {
       if (already.has(item.session)) {
-        const existing = [...tracked.entries()].find(([, m]) => m.session === item.session);
-        if (existing && !item.split) parentByGroup.set(item.groupId, existing[0]);
+        const existing = termBySession.get(item.session);
+        if (existing && !item.split) parentByGroup.set(item.groupId, existing);
         continue;
       }
+      // A normal shell we saved has no tmux session yet. If that folder is
+      // already open, Cursor revived it. Don't attach a second copy.
+      if (!sessionExists(item.session) && item.cwd && openCwds.has(item.cwd)) continue;
       const cwd = (sessionExists(item.session) && liveCwd(item.session)) || item.cwd;
       const parent = item.split ? parentByGroup.get(item.groupId) : undefined;
       const term = openPersistentTerminal({
@@ -463,7 +526,7 @@ function activate(ctx) {
       scheduleSave();
     }),
     vscode.commands.registerCommand("terminalKeeper.saveAllTabs", async () => {
-      const groups = currentGroups();
+      const groups = await currentGroups();
       const panes = groups.reduce((n, g) => n + (g.panes || []).length, 0);
       if (panes === 0) {
         vscode.window.showInformationMessage("Terminal Keeper: no tabs to save.");

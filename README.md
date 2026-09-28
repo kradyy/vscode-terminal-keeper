@@ -1,8 +1,8 @@
 # Terminal Keeper
 
-Persistent terminal tabs for VS Code and Cursor, backed by tmux.
+Persistent terminal tabs for VS Code and Cursor, backed by tmux. For when your agents each have a terminal and you are tired of opening them again.
 
-You leave a tab in the scheduler, a split on the client repo, another one wherever the last agent was working. Reload the window, close the editor, or lose the SSH/WSL connection, and that setup is gone. Terminal Keeper keeps the tabs and their folders, and lets you save a whole set the way you would bookmark tabs in a browser.
+You leave a tab in the scheduler, a split on the client repo, another one wherever the last agent was working. Reload the window, close the editor, or lose the SSH/WSL connection, and that setup is gone. Terminal Keeper keeps the tabs and the folders, and lets you bookmark a whole set the way you would bookmark tabs in a browser.
 
 Works in VS Code, Cursor, and other VS Code-based editors, locally or over Remote SSH / WSL.
 
@@ -28,7 +28,7 @@ Command Palette → **Terminal Keeper: Options**, or the **Options** tab next to
 - **Auto-save open tabs** → `terminalKeeper.autoSave` (default off)
 - Max panes, restore delay, tmux prefix
 
-The panel **+** button is still a normal shell. It is not saved.
+The panel **+** button is a normal shell. Save and auto-save record that tab and the folder it is in. The next restore opens it as a persistent tab. Closed tabs are dropped, even if their tmux session is still running.
 
 ## Install
 

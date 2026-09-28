@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
-PUBLISHER="chris"
+PUBLISHER="kradyy"
 NAME="terminal-keeper"
 VERSION="$(node -p "require('${ROOT}/package.json').version")"
 EXT_ID="${PUBLISHER}.${NAME}-${VERSION}"
@@ -35,7 +35,7 @@ export EXT_JSON EXT_ID VERSION DEST
 node <<'EOF'
 const fs = require("fs");
 const p = process.env.EXT_JSON;
-const id = "chris.terminal-keeper";
+const id = "kradyy.terminal-keeper";
 const version = process.env.VERSION;
 const dest = process.env.DEST;
 const relative = process.env.EXT_ID;
