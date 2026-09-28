@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 PUBLISHER="kradyy"
-NAME="terminal-keeper"
+NAME="tmux-terminal-keeper"
 VERSION="$(node -p "require('${ROOT}/package.json').version")"
 EXT_ID="${PUBLISHER}.${NAME}-${VERSION}"
 
@@ -35,7 +35,7 @@ export EXT_JSON EXT_ID VERSION DEST
 node <<'EOF'
 const fs = require("fs");
 const p = process.env.EXT_JSON;
-const id = "kradyy.terminal-keeper";
+const id = "kradyy.tmux-terminal-keeper";
 const version = process.env.VERSION;
 const dest = process.env.DEST;
 const relative = process.env.EXT_ID;

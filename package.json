@@ -1,5 +1,5 @@
 {
-  "name": "terminal-keeper",
+  "name": "tmux-terminal-keeper",
   "displayName": "Terminal Keeper",
   "description": "Persistent terminal tabs for VS Code and Cursor, backed by tmux. Save, bookmark and restore terminal layouts that survive reloads.",
   "version": "0.6.0",
